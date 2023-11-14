@@ -1,3 +1,4 @@
+require('dotenv').config()
 const createError = require('http-errors')
 const express = require('express')
 const path = require('path')
@@ -8,6 +9,17 @@ const indexRouter = require('./routes/routes')
 
 const app = express()
 
+// database setup
+const mongoose = require('mongoose')
+mongoose.set('strictQuery', false)
+const mongoDB = process.env.DB_CONNECTION_STRING
+
+dbConnect().catch((err) => console.log(err))
+async function dbConnect() {
+  await mongoose.connect(mongoDB)
+}
+
+// middleware
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))

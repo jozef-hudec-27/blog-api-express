@@ -1,6 +1,8 @@
 const User = require('../models/user')
 const { body, validationResult } = require('express-validator')
+const asyncHandler = require('express-async-handler')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 exports.register = [
   body('email')
@@ -50,3 +52,21 @@ exports.register = [
     })
   },
 ]
+
+exports.login = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email })
+
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid email or password.' })
+  }
+
+  const passwordMatch = await bcrypt.compare(req.body.password, user.passwordEncrypted)
+
+  if (!passwordMatch) {
+    return res.status(400).json({ message: 'Invalid email or password.' })
+  }
+
+  const token = jwt.sign({ user }, process.env.JWT_SECRET)
+
+  res.json({ token })
+})

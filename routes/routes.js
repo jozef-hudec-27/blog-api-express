@@ -1,8 +1,7 @@
 const express = require('express')
 const router = express.Router()
+const usersController = require('../controllers/usersController')
 
-router.get('/', function (req, res, next) {
-  res.json({ message: 'Hello World!' })
-})
+router.post('/register', usersController.register)
 
 module.exports = router

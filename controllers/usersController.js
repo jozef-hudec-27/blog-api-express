@@ -60,13 +60,102 @@ exports.login = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ message: 'Invalid email or password.' })
   }
 
-  const passwordMatch = await bcrypt.compare(req.body.password, user.passwordEncrypted)
+  const { passwordEncrypted, firstName, lastName, email, _id } = user
+
+  const passwordMatch = await bcrypt.compare(req.body.password, passwordEncrypted)
 
   if (!passwordMatch) {
     return res.status(400).json({ message: 'Invalid email or password.' })
   }
 
-  const token = jwt.sign({ user }, process.env.JWT_SECRET)
+  // Access token expires in 20 minutes
+  const accessToken = jwt.sign({ user: { firstName, lastName, email, _id } }, process.env.JWT_SECRET, {
+    expiresIn: 1200,
+  })
+  const refreshToken = jwt.sign({ user: { _id } }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
-  res.json({ token })
+  await User.findByIdAndUpdate(_id, { $push: { tokens: refreshToken } })
+
+  res.cookie('refreshToken', refreshToken, { httpOnly: true, maxAge: 604800000, secure: true, sameSite: 'none' })
+
+  res.json({ accessToken })
+})
+
+exports.refresh = [
+  // Check if valid refresh token is in DB
+  asyncHandler(async (req, res, next) => {
+    const refreshToken = req.cookies?.refreshToken
+
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Missing token.' })
+    }
+
+    const isInDB = await User.findOne({ tokens: refreshToken })
+
+    if (!isInDB) {
+      return res.status(401).json({ message: 'Invalid token.' })
+    }
+
+    next()
+  }),
+
+  // Check token expiration
+  asyncHandler(async (req, res, next) => {
+    const refreshToken = req.cookies.refreshToken
+    const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET, { ignoreExpiration: true })
+
+    // Refresh token has expired
+    if (decoded.exp < Date.now() / 1000) {
+      await User.findOneAndUpdate({ tokens: refreshToken }, { $pull: { tokens: refreshToken } })
+
+      res.clearCookie('refreshToken', { httpOnly: true, maxAge: 604800000, secure: true, sameSite: 'none' })
+
+      res.status(403).json({ message: 'Expired token.' })
+    }
+
+    // Refresh token has not expired yet
+    next()
+  }),
+
+  // Issue new access token
+  asyncHandler(async (req, res, next) => {
+    const refreshToken = req.cookies.refreshToken
+
+    try {
+      const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET)
+
+      const user = await User.findById(decoded.user._id)
+
+      if (!user) {
+        return res.status(404).json({ message: 'User not found.' })
+      }
+
+      const { firstName, lastName, email, _id } = user
+      const accessToken = jwt.sign({ user: { firstName, lastName, email, _id } }, process.env.JWT_SECRET, {
+        expiresIn: 1200,
+      })
+
+      res.json({ accessToken })
+    } catch (err) {
+      res.status(403).json({ message: 'Invalid token.' })
+    }
+  }),
+]
+
+exports.logout = asyncHandler(async (req, res, next) => {
+  const refreshToken = req.cookies?.refreshToken
+
+  if (!refreshToken) {
+    return res.status(204).end()
+  }
+
+  const user = await User.findOneAndUpdate({ tokens: refreshToken }, { $pull: { tokens: refreshToken }, new: true })
+
+  res.clearCookie('refreshToken', { httpOnly: true, maxAge: 604800000, secure: true, sameSite: 'none' })
+
+  if (!user) {
+    return res.status(204).end()
+  }
+
+  res.status(204).end()
 })

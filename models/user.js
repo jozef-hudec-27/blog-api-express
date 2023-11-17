@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
   isAdmin: { type: Boolean, default: false },
   registeredAt: { type: Date, default: Date.now },
   passwordEncrypted: { type: String, required: true },
+  tokens: { type: [String], default: [] },
 })
 
 module.exports = mongoose.model('User', userSchema)

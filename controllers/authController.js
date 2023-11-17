@@ -72,7 +72,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   // Access token expires in 20 minutes
   const accessToken = jwt.sign({ user: { firstName, lastName, email, _id } }, process.env.JWT_SECRET, {
-    expiresIn: 1200,
+    expiresIn: 90,
   })
   const refreshToken = jwt.sign({ user: { _id } }, process.env.JWT_SECRET, { expiresIn: '7d' })
 
@@ -134,7 +134,7 @@ exports.refresh = [
 
       const { firstName, lastName, email, _id } = user
       const accessToken = jwt.sign({ user: { firstName, lastName, email, _id } }, process.env.JWT_SECRET, {
-        expiresIn: 1200,
+        expiresIn: 90,
       })
 
       res.json({ accessToken })

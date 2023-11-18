@@ -4,7 +4,7 @@ const asyncHandler = require('express-async-handler')
 const User = require('../models/user')
 
 exports.enableAuthor = [
-  protectRoute,
+  protectRoute(),
 
   body('code', 'Incorrect code.').trim().equals(process.env.AUTHOR_CODE),
 

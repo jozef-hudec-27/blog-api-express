@@ -19,4 +19,22 @@ const checkTokenExpiration = (req, res, next) => {
   })
 }
 
-exports.protectRoute = [checkTokenExpiration, passport.authenticate('jwt', { session: false })]
+const requireAuthor = (req, res, next) => {
+  req._requireAuthor = true
+
+  next()
+}
+
+exports.protectRoute = (authorRequired = false) => {
+  const middleware = []
+
+  middleware.push(checkTokenExpiration)
+
+  if (authorRequired) {
+    middleware.push(requireAuthor)
+  }
+
+  middleware.push(passport.authenticate('jwt', { session: false }))
+
+  return middleware
+}

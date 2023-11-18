@@ -4,6 +4,30 @@ const { protectRoute } = require('../utils/auth')
 const asyncHandler = require('express-async-handler')
 const { postValidations } = require('./validations')
 
+// Succeeds if post exists and user is admin or author of post
+const postPermissions = [
+  // Check if post exists
+  asyncHandler(async (req, res, next) => {
+    const post = await Post.findById(req.params.id)
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found.' })
+    }
+
+    req.post = post
+    next()
+  }),
+
+  // Check if user is admin or author of post
+  (req, res, next) => {
+    if (!req.user.isAdmin && req.post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden.' })
+    }
+
+    next()
+  },
+]
+
 exports.create = [
   protectRoute(true),
 
@@ -26,6 +50,8 @@ exports.create = [
 exports.update = [
   protectRoute(true),
 
+  postPermissions,
+
   postValidations,
 
   asyncHandler(async (req, res, next) => {
@@ -35,15 +61,7 @@ exports.update = [
       return res.status(400).json({ errors: errors.array() })
     }
 
-    let post = await Post.findById(req.params.id)
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found.' })
-    } else if (!req.user.isAdmin && post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden.' })
-    }
-
-    post = await Post.findByIdAndUpdate(post._id, { ...req.body, updatedAt: Date.now() }, { new: true })
+    const post = await Post.findByIdAndUpdate(req.post._id, { ...req.body, updatedAt: Date.now() }, { new: true })
 
     res.status(200).json(post)
   }),
@@ -52,16 +70,10 @@ exports.update = [
 exports.delete = [
   protectRoute(true),
 
+  postPermissions,
+
   asyncHandler(async (req, res, next) => {
-    const post = await Post.findById(req.params.id)
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found.' })
-    } else if (!req.user.isAdmin && post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden.' })
-    }
-
-    await Post.findByIdAndDelete(post._id)
+    await Post.findByIdAndDelete(req.post._id)
 
     res.status(204).end()
   }),

@@ -1,6 +1,9 @@
 const { protectRoute } = require('../utils/auth')
+const usersController = require('../controllers/usersController')
 
 const router = require('express').Router()
+
+router.post('/users/author', usersController.enableAuthor)
 
 router.get(
   '/protected',
@@ -8,6 +11,7 @@ router.get(
   protectRoute,
 
   (req, res) => {
+    console.log(req.user)
     res.json({ message: 'You are authorized.' })
   }
 )

@@ -16,7 +16,7 @@ module.exports = (passport) => {
 
         if (user) {
           if (req._requireAuthor && !user.isAuthor && !user.isAdmin) {
-            return done(null, false)
+            return done(null, false, 'Forbidden')
           }
 
           return done(null, user)

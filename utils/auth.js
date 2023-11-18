@@ -34,7 +34,25 @@ exports.protectRoute = (authorRequired = false) => {
     middleware.push(requireAuthor)
   }
 
-  middleware.push(passport.authenticate('jwt', { session: false }))
+  middleware.push((req, res, next) => {
+    // Override passport's default behavior with custom callback
+    passport.authenticate('jwt', { session: false }, (err, user, info) => {
+      if (err) {
+        return next(err)
+      }
+
+      if (!user) {
+        if (info === 'Forbidden') {
+          return res.status(403).json({ message: 'Forbidden' })
+        }
+
+        return res.status(401).json({ message: 'Unauthorized' })
+      }
+
+      req.user = user
+      next()
+    })(req, res, next)
+  })
 
   return middleware
 }

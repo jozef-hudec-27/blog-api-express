@@ -51,6 +51,7 @@ exports.update = [
 
 exports.delete = [
   protectRoute(true),
+
   asyncHandler(async (req, res, next) => {
     const post = await Post.findById(req.params.id)
 

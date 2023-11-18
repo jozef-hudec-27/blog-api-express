@@ -1,5 +1,5 @@
 const { body, validationResult } = require('express-validator')
-const { protectRoute } = require('../utils/auth')
+const { protectRoute } = require('../middleware/authMiddleware')
 const asyncHandler = require('express-async-handler')
 const User = require('../models/user')
 

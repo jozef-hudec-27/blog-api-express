@@ -1,5 +1,6 @@
 const usersController = require('../controllers/usersController')
 const postsController = require('../controllers/postsController')
+const commentsController = require('../controllers/commentsController')
 
 const router = require('express').Router()
 
@@ -8,9 +9,13 @@ router.post('/users/author', usersController.enableAuthor)
 
 // POSTS
 router.get('/posts', postsController.index)
-router.get('/posts/:id', postsController.show)
+router.get('/posts/:postId', postsController.show)
 router.post('/posts', postsController.create)
-router.put('/posts/:id', postsController.update)
-router.delete('/posts/:id', postsController.delete)
+router.put('/posts/:postId', postsController.update)
+router.delete('/posts/:postId', postsController.delete)
+
+// COMMENTS
+router.get('/posts/:postId/comments', commentsController.index)
+router.get('/comments/:commentId', commentsController.show)
 
 module.exports = router

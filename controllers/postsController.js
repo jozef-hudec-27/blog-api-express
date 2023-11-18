@@ -1,34 +1,9 @@
 const Post = require('../models/post')
 const { validationResult } = require('express-validator')
-const { protectRoute } = require('../utils/auth')
+const { protectRoute } = require('../middleware/authMiddleware')
 const asyncHandler = require('express-async-handler')
 const { postValidations } = require('./validations')
-
-const postExists = asyncHandler(async (req, res, next) => {
-  const post = await Post.findById(req.params.id)
-
-  if (!post) {
-    return res.status(404).json({ message: 'Post not found.' })
-  }
-
-  req.post = post
-  next()
-})
-
-// Succeeds if post exists and user is admin or author of post
-const postPermissions = [
-  // Check if post exists
-  postExists,
-
-  // Check if user is admin or author of post
-  (req, res, next) => {
-    if (!req.user.isAdmin && req.post.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden.' })
-    }
-
-    next()
-  },
-]
+const { postExists, postPermissions } = require('../middleware/postMiddleware')
 
 exports.index = asyncHandler(async (req, res, next) => {
   const posts = await Post.find().populate('author', 'firstName lastName')
@@ -43,7 +18,7 @@ exports.show = [
     const post = req.post
     await post.populate('author', 'firstName lastName')
 
-    res.status(200).json(req.post)
+    res.status(200).json(post)
   }),
 ]
 

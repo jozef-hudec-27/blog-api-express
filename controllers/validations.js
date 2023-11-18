@@ -7,3 +7,10 @@ exports.postValidations = [
 
   body('isPublished').optional({ values: 'falsy' }).isBoolean(),
 ]
+
+exports.commentValidations = [
+  body('body', 'Comment must have a body between 1 and 1000 characters.')
+    .trim()
+    .isLength({ min: 1, max: 1000 })
+    .escape(),
+]

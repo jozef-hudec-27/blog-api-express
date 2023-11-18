@@ -48,3 +48,20 @@ exports.update = [
     res.status(200).json(post)
   }),
 ]
+
+exports.delete = [
+  protectRoute(true),
+  asyncHandler(async (req, res, next) => {
+    const post = await Post.findById(req.params.id)
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found.' })
+    } else if (!req.user.isAdmin && post.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden.' })
+    }
+
+    await Post.findByIdAndDelete(post._id)
+
+    res.status(204).end()
+  }),
+]

@@ -4,19 +4,21 @@ const { protectRoute } = require('../utils/auth')
 const asyncHandler = require('express-async-handler')
 const { postValidations } = require('./validations')
 
+const postExists = asyncHandler(async (req, res, next) => {
+  const post = await Post.findById(req.params.id)
+
+  if (!post) {
+    return res.status(404).json({ message: 'Post not found.' })
+  }
+
+  req.post = post
+  next()
+})
+
 // Succeeds if post exists and user is admin or author of post
 const postPermissions = [
   // Check if post exists
-  asyncHandler(async (req, res, next) => {
-    const post = await Post.findById(req.params.id)
-
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found.' })
-    }
-
-    req.post = post
-    next()
-  }),
+  postExists,
 
   // Check if user is admin or author of post
   (req, res, next) => {
@@ -26,6 +28,23 @@ const postPermissions = [
 
     next()
   },
+]
+
+exports.index = asyncHandler(async (req, res, next) => {
+  const posts = await Post.find().populate('author', 'firstName lastName')
+
+  res.status(200).json(posts)
+})
+
+exports.show = [
+  postExists,
+
+  asyncHandler(async (req, res, next) => {
+    const post = req.post
+    await post.populate('author', 'firstName lastName')
+
+    res.status(200).json(req.post)
+  }),
 ]
 
 exports.create = [

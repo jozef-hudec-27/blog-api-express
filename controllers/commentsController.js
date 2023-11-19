@@ -1,5 +1,5 @@
 const { postExists } = require('../middleware/postMiddleware')
-const { commentExists } = require('../middleware/commentMiddleware')
+const { commentExists, commentPermissions } = require('../middleware/commentMiddleware')
 const { protectRoute } = require('../middleware/authMiddleware')
 const asyncHandler = require('express-async-handler')
 const Comment = require('../models/comment')
@@ -45,5 +45,29 @@ exports.create = [
     await comment.save()
 
     res.status(201).json(comment)
+  }),
+]
+
+exports.update = [
+  protectRoute(),
+
+  commentPermissions,
+
+  commentValidations,
+
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req)
+
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() })
+    }
+
+    const comment = await Comment.findByIdAndUpdate(
+      req.comment._id,
+      { body: req.body.body, updatedAt: Date.now() },
+      { new: true }
+    )
+
+    res.status(200).json(comment)
   }),
 ]

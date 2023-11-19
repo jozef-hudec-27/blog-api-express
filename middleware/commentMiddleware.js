@@ -13,3 +13,16 @@ const commentExists = asyncHandler(async (req, res, next) => {
 })
 
 exports.commentExists = commentExists
+
+exports.commentPermissions = [
+  commentExists,
+
+  // Only comment author or admin can update/delete comment
+  (req, res, next) => {
+    if (!req.user.isAdmin && req.comment.author.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'Forbidden.' })
+    }
+
+    next()
+  },
+]

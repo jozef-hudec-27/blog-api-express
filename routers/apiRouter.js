@@ -18,5 +18,6 @@ router.delete('/posts/:postId', postsController.delete)
 router.get('/posts/:postId/comments', commentsController.index)
 router.get('/comments/:commentId', commentsController.show)
 router.post('/posts/:postId/comments', commentsController.create)
+router.put('/comments/:commentId', commentsController.update)
 
 module.exports = router

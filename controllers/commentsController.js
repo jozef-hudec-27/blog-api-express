@@ -71,3 +71,15 @@ exports.update = [
     res.status(200).json(comment)
   }),
 ]
+
+exports.delete = [
+  protectRoute(),
+
+  commentPermissions,
+
+  asyncHandler(async (req, res, next) => {
+    await Comment.findByIdAndDelete(req.comment._id)
+
+    res.status(204).end()
+  }),
+]

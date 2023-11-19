@@ -17,12 +17,22 @@ exports.commentExists = commentExists
 exports.commentPermissions = [
   commentExists,
 
-  // Only comment author or admin can update/delete comment
-  (req, res, next) => {
-    if (!req.user.isAdmin && req.comment.author.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Forbidden.' })
+  // Only comment author or admin can update & delete comment, post author can delete comment
+  async (req, res, next) => {
+    if (req.user.isAdmin || req.comment.author.toString() === req.user._id.toString()) {
+      return next()
     }
 
-    next()
+    // Post author can delete
+    if (req.method === 'DELETE') {
+      await req.comment.populate('post', 'author')
+      const post = req.comment.post
+
+      if (post.author.toString() === req.user._id.toString()) {
+        return next()
+      }
+    }
+
+    res.status(403).json({ message: 'Forbidden' })
   },
 ]

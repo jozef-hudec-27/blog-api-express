@@ -19,7 +19,9 @@ const mongoDB = process.env.DB_CONNECTION_STRING
 
 dbConnect().catch((err) => console.log(err))
 async function dbConnect() {
-  await mongoose.connect(mongoDB)
+  if (process.env.NODE_ENV !== 'test') {
+    await mongoose.connect(mongoDB)
+  }
 }
 
 // middleware
